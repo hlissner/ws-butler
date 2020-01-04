@@ -64,7 +64,12 @@ changed in this specific way."
   :type 'boolean
   :group 'ws-butler)
 
-(defcustom ws-butler-global-exempt-modes '(markdown-mode)
+(defcustom ws-butler-global-exempt-modes
+  '(special-mode
+    comint-mode
+    term-mode
+    eshell-mode
+    markdown-mode)
   "Don't enable ws-butler in modes that inherit from these.
 
 This should be a list of trailing whitespace significant major-modes."
