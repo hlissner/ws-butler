@@ -67,8 +67,7 @@
   "Unobtrusively whitespace deletion like a butler."
   :group 'convenience)
 
-(defcustom ws-butler-keep-whitespace-before-point
-  t
+(defcustom ws-butler-keep-whitespace-before-point t
   "Keep whitespace at current point after save.
 
 That is to say, if whitespace around is trimmed, perform the
@@ -78,8 +77,7 @@ i.e. only the \"virtual\" space is preserved in the buffer."
   :type 'boolean
   :group 'ws-butler)
 
-(defcustom ws-butler-convert-leading-tabs-or-spaces
-  nil
+(defcustom ws-butler-convert-leading-tabs-or-spaces nil
   "Make leading whitespace be tabs or spaces
 
 If `indent-tabs-mode' is non-nil, call `tabify', else call
@@ -87,20 +85,17 @@ If `indent-tabs-mode' is non-nil, call `tabify', else call
 buffer. This is off by default because it's unwanted if you
 occasionally edit files where leading whitespace should not be
 changed in this specific way."
-
   :type 'boolean
   :group 'ws-butler)
 
-(defcustom ws-butler-global-exempt-modes
-  '(markdown-mode)
+(defcustom ws-butler-global-exempt-modes '(markdown-mode)
   "Don't enable ws-butler in modes that inherit from these.
 
 This should be a list of trailing whitespace significant major-modes."
   :type '(repeat (symbol :tag "Major mode"))
   :group 'ws-butler)
 
-(defcustom ws-butler-trim-predicate
-  (lambda (_beg _end) t)
+(defcustom ws-butler-trim-predicate (lambda (_beg _end) t)
   "Return true for regions that should be trimmed.
 
 Expects 2 arguments - beginning and end of a region.
@@ -110,16 +105,15 @@ When not defined all regions are trimmed."
   :type 'function
   :group 'ws-butler)
 
-(defvar ws-butler-saved)
+(defvar ws-butler--saved)
 
 (defmacro ws-butler-with-save (&rest forms)
   "Run FORMS with restriction and excursion saved once."
   (declare (debug (body)))
-  `(if (and (boundp 'ws-butler-saved)
-            ws-butler-saved)
+  `(if (bound-and-true-p ws-butler--saved)
        (progn
          ,@forms)
-     (let ((ws-butler-saved t))
+     (let ((ws-butler--saved t))
        (save-excursion
          (save-restriction
            ,@forms)))))
@@ -163,9 +157,9 @@ Also see `require-final-newline'."
        (goto-char (point-max))
        (skip-chars-backward " \t\n\v")
        (let ((printable-point-max (point)))
-         (when (and (funcall ws-butler-trim-predicate printable-point-max (point-max))
-                  (>= last-modified-pos printable-point-max))
-           (ws-butler-trim-eob-lines))))))
+         (and (funcall ws-butler-trim-predicate printable-point-max (point-max))
+              (>= last-modified-pos printable-point-max)
+              (ws-butler-trim-eob-lines))))))
   ;; clean return code for hooks
   nil)
 
@@ -234,9 +228,9 @@ ensure point doesn't jump due to white space trimming."
   (when ws-butler-keep-whitespace-before-point
     (ws-butler-with-save
      (widen)
-     (setq ws-butler-presave-coord (list
-                                    (line-number-at-pos (point))
-                                    (current-column)))))
+     (setq ws-butler-presave-coord
+           (list (line-number-at-pos (point))
+                 (current-column)))))
   (let (last-end)
     (ws-butler-map-changes
      (lambda (_prop beg end)
@@ -255,8 +249,9 @@ ensure point doesn't jump due to white space trimming."
 (defun ws-butler-clear-properties ()
   "Clear all ws-butler text properties in buffer."
   (with-silent-modifications
-    (ws-butler-map-changes (lambda (_prop start end)
-                             (remove-list-of-text-properties start end '(ws-butler-chg))))))
+    (ws-butler-map-changes
+     (lambda (_prop start end)
+       (remove-list-of-text-properties start end '(ws-butler-chg))))))
 
 (defun ws-butler-after-change (beg end length-before)
   (let ((type (if (and (= beg end) (> length-before 0))
@@ -275,7 +270,6 @@ ensure point doesn't jump due to white space trimming."
 
 (defun ws-butler-after-save ()
   "Restore trimmed whitespace before point."
-
   (ws-butler-clear-properties)
   ;; go to saved line+col
   (when ws-butler-presave-coord
