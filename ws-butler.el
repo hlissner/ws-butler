@@ -1,38 +1,19 @@
 ;;; ws-butler.el --- Unobtrusively remove trailing whitespace.
-
-;; this file is not part of Emacs
-
+;;
 ;; Copyright (C) 2013 Le Wang
+;; Copyright (C) 2020 Henrik Lissner
 ;; Author: Le Wang
-;; Maintainer: Le Wang
+;; Maintainer: Henrik Lissner
 ;; Description: unobtrusively remove trailing whitespace
-;; Author: Le Wang
-;; Maintainer: Le Wang
-
+;;
+;; Version: 0.7
 ;; Created: Sat Jan  5 16:49:23 2013 (+0800)
-;; Version: 0.6
-;; Last-Updated:
-;;           By:
+;; Modified: January 04, 2020
 ;; URL: https://github.com/lewang/ws-butler
 ;; Keywords:
-;; Compatibility: Emacs 24
-
-;;; Installation:
-
+;; Package-Requires: ((emacs "25.1"))
 ;;
-;; To enable for all ruby-mode buffers, add to .emacs.el:
-;;
-;;      (require 'ws-butler)
-;;      (add-hook 'ruby-mode-hook 'ws-butler-mode)
-;;
-
-;;; Commentary:
-
-;;
-;;
-;;
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; This file is not part of Emacs
 ;;
 ;; This program is free software; you can redistribute it and/or
 ;; modify it under the terms of the GNU General Public License as
@@ -49,19 +30,14 @@
 ;; the Free Software Foundation, Inc., 51 Franklin Street, Fifth
 ;; Floor, Boston, MA 02110-1301, USA.
 ;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
+;;; Commentary:
+;;
+;; To enable for all ruby-mode buffers, add to .emacs.el:
+;;
+;;      (require 'ws-butler)
+;;      (add-hook 'ruby-mode-hook 'ws-butler-mode)
+;;
 ;;; Code:
-
-(eval-when-compile
-  (require 'cl))
-
-(eval-and-compile
-  (unless (fboundp 'setq-local)
-    (defmacro setq-local (var val)
-      "Set variable VAR to value VAL in current buffer."
-      ;; Can't use backquote here, it's too early in the bootstrap.
-      (list 'set (list 'make-local-variable (list 'quote var)) val))))
 
 (defgroup ws-butler nil
   "Unobtrusively whitespace deletion like a butler."
