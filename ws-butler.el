@@ -235,19 +235,23 @@ ensure point doesn't jump due to white space trimming."
        (remove-list-of-text-properties start end '(ws-butler-chg))))))
 
 (defun ws-butler-after-change (beg end length-before)
-  (let ((type (if (and (= beg end) (> length-before 0))
-                  'delete
-                'chg)))
-    (if undo-in-progress
-        ;; add back deleted text during undo
-        (if (and (zerop length-before)
-               (> end beg)
-               (eq (get-text-property end 'ws-butler-chg) 'delete))
-            (remove-list-of-text-properties end (1+ end) '(ws-butler-chg)))
-      (with-silent-modifications
-        (when (eq type 'delete)
-          (setq end (min (+ end 1) (point-max))))
-        (put-text-property beg end 'ws-butler-chg type)))))
+  ;; In Emacs 27+, functions like `call-process-region' will invoke
+  ;; `after-change-functions' on the process buffer, where ws-butler don't care
+  ;; about changes, making this guard is necessary:
+  (when (eq (current-buffer) (window-buffer (selected-window)))
+    (let ((type (if (and (= beg end) (> length-before 0))
+                    'delete
+                  'chg)))
+      (if undo-in-progress
+          ;; add back deleted text during undo
+          (if (and (zerop length-before)
+                   (> end beg)
+                   (eq (get-text-property end 'ws-butler-chg) 'delete))
+              (remove-list-of-text-properties end (1+ end) '(ws-butler-chg)))
+        (with-silent-modifications
+          (when (eq type 'delete)
+            (setq end (min (+ end 1) (point-max))))
+          (put-text-property beg end 'ws-butler-chg type))))))
 
 (defun ws-butler-after-save ()
   "Restore trimmed whitespace before point."
