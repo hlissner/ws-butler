@@ -177,7 +177,7 @@ replaced by spaces, and vice versa if t."
 
 
 (defvar ws-butler-presave-coord nil
-  "Saved list of (LINE COLUMN) used to restore point after saving.
+  "Saved list of (LINE COLUMN TEXT) used to restore point after saving.
 
 This is the key to the virtual spaces preserving indentation mechanism.")
 (make-variable-buffer-local 'ws-butler-presave-coord)
@@ -206,12 +206,17 @@ Setting `ws-butler-keep-whitespace-before-point' will also
 ensure point doesn't jump due to white space trimming."
 
   ;; save data to restore later
-  (when ws-butler-keep-whitespace-before-point
-    (ws-butler-with-save
-     (widen)
-     (setq ws-butler-presave-coord
-           (list (line-number-at-pos (point))
-                 (current-column)))))
+  (setf ws-butler-presave-coord
+        (if ws-butler-keep-whitespace-before-point
+            (ws-butler-with-save
+             (widen)
+             (list (line-number-at-pos (point))
+                   (current-column)
+                   (let ((p (point)))
+                     (save-excursion
+                       (skip-chars-backward " \t")
+                       (constrain-to-field nil p t)
+                       (buffer-substring (point) p)))))))
   (let (last-end)
     (ws-butler-map-changes
      (lambda (_prop beg end)
@@ -266,7 +271,9 @@ ensure point doesn't jump due to white space trimming."
          (setq remaining-lines (forward-line (1- (car ws-butler-presave-coord)))))
         (unless (eq remaining-lines 0)
           (insert (make-string remaining-lines ?\n))))
-      (move-to-column (cadr ws-butler-presave-coord) t))))
+      (move-to-column (cadr ws-butler-presave-coord))
+      (when (< (current-column) (cadr ws-butler-presave-coord))
+        (insert (caddr ws-butler-presave-coord))))))
 
 (defun ws-butler-before-revert ()
   "Clear `ws-butler-presave-coord'."
